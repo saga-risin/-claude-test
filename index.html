@@ -76,12 +76,14 @@
 
     .presets-section { width: 100%; max-width: 480px; }
     .presets-title { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: #55556a; text-align: center; margin-bottom: 12px; }
-    .presets-list { display: flex; flex-direction: column; gap: 6px; }
-    .preset-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #28283f; border-radius: 6px; background: #0f0f1c; }
-    .preset-num  { font-size: 10px; color: #55556a; min-width: 22px; letter-spacing: 1px; }
-    .preset-name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .preset-info { font-size: 10px; color: #55556a; white-space: nowrap; margin-right: 4px; }
-    .btn-preset  { padding: 4px 10px; border-radius: 4px; font-size: 10px; letter-spacing: 1px; cursor: pointer; border: 1px solid; background: transparent; }
+    .presets-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 380px; overflow-y: auto; padding-right: 2px; }
+    .preset-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid #28283f; border-radius: 6px; background: #0f0f1c; }
+    .preset-row-top { display: flex; align-items: center; gap: 6px; }
+    .preset-num  { font-size: 9px; color: #55556a; min-width: 18px; letter-spacing: 1px; }
+    .preset-name { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preset-info { font-size: 9px; color: #55556a; }
+    .preset-btns { display: flex; gap: 4px; }
+    .btn-preset  { padding: 3px 7px; border-radius: 4px; font-size: 9px; letter-spacing: 0.5px; cursor: pointer; border: 1px solid; background: transparent; flex: 1; }
     .btn-preset:hover   { opacity: 0.75; }
     .btn-preset:disabled { opacity: 0.2; cursor: default; }
     .btn-preset-save { border-color: #22c55e; color: #22c55e; }
@@ -149,8 +151,8 @@
 
   <script>
     // ── プリセットデータ ──
-    const STORAGE_KEY  = 'metroPro_v1';
-    const PRESET_COUNT = 3;
+    const STORAGE_KEY  = 'metroPro_v2';
+    const PRESET_COUNT = 20;
     let presets = (() => {
       try {
         const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -318,6 +320,10 @@
         const row = document.createElement('div');
         row.className = 'preset-row';
 
+        // 上段：番号 + 曲名
+        const top = document.createElement('div');
+        top.className = 'preset-row-top';
+
         const numEl = document.createElement('span');
         numEl.className = 'preset-num';
         numEl.textContent = String(i + 1).padStart(2, '0');
@@ -327,9 +333,16 @@
         nameEl.textContent = p ? p.name : '────';
         nameEl.style.color = p ? '#dde2f5' : '#55556a';
 
-        const infoEl = document.createElement('span');
+        top.append(numEl, nameEl);
+
+        // 中段：BPM・拍子情報
+        const infoEl = document.createElement('div');
         infoEl.className = 'preset-info';
         infoEl.textContent = p ? `${p.bpm} BPM  ${p.tsNum}/${p.tsDenom}` : '';
+
+        // 下段：操作ボタン
+        const btns = document.createElement('div');
+        btns.className = 'preset-btns';
 
         const btnSave = document.createElement('button');
         btnSave.className = 'btn-preset btn-preset-save';
@@ -338,9 +351,9 @@
           const inputName = prompt('曲名を入力してください', p ? p.name : '');
           if (inputName === null) return;
           presets[i] = {
-            name:   inputName.trim() || `Preset ${i + 1}`,
+            name:    inputName.trim() || `Preset ${i + 1}`,
             bpm,
-            tsNum:  parseInt(tsNumEl.value,   10),
+            tsNum:   parseInt(tsNumEl.value,   10),
             tsDenom: parseInt(tsDenomEl.value, 10),
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
@@ -370,7 +383,8 @@
           renderPresets();
         });
 
-        row.append(numEl, nameEl, infoEl, btnSave, btnLoad, btnDel);
+        btns.append(btnSave, btnLoad, btnDel);
+        row.append(top, infoEl, btns);
         presetsGrid.appendChild(row);
       });
     }
