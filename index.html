@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Metronome Pro</title>
+  <style>
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      background: #08080f;
+      color: #dde2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 12px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #55556a;
+      margin-bottom: 28px;
+    }
+
+    .led {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: #10101e;
+      border: 2px solid #28283f;
+      margin-bottom: 24px;
+    }
+
+    .bpm-section { text-align: center; margin-bottom: 20px; }
+    .bpm-label { font-size: 10px; letter-spacing: 5px; color: #55556a; margin-bottom: 8px; }
+    .bpm-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
+    .bpm-num { font-size: 72px; font-weight: 200; min-width: 160px; text-align: center; }
+    .btn-adj { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #28283f; background: #10101e; color: #dde2f5; font-size: 24px; cursor: pointer; }
+    .bpm-input { width: 90px; padding: 6px 10px; background: #10101e; border: 1px solid #28283f; border-radius: 6px; color: #dde2f5; font-size: 16px; text-align: center; margin-top: 8px; }
+
+    .ts-section { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .ts-label { font-size: 10px; letter-spacing: 4px; color: #55556a; }
+    .ts-select { background: #10101e; border: 1px solid #28283f; border-radius: 6px; color: #dde2f5; font-size: 18px; padding: 4px 8px; }
+
+    .transport { display: flex; gap: 12px; align-items: center; margin-bottom: 28px; }
+    .btn-start { padding: 14px 48px; border-radius: 40px; border: none; background: #22c55e; color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 4px; cursor: pointer; }
+    .btn-mute { width: 48px; height: 48px; border-radius: 50%; border: 1px solid #28283f; background: #10101e; color: #8888aa; font-size: 20px; cursor: pointer; }
+
+    .presets-section { width: 100%; max-width: 480px; }
+    .presets-title { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: #55556a; text-align: center; margin-bottom: 12px; }
+    .presets-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .preset-cell { background: #0f0f1c; border: 1px solid #28283f; border-radius: 6px; padding: 8px 4px; text-align: center; font-size: 10px; color: #55556a; min-height: 52px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>Metronome Pro</h1>
+
+  <!-- 光の点滅表示エリア -->
+  <div class="led" id="led"></div>
+
+  <!-- BPM表示・増減ボタン・数値入力 -->
+  <div class="bpm-section">
+    <div class="bpm-label">BPM</div>
+    <div class="bpm-row">
+      <button class="btn-adj" id="btnDown">−</button>
+      <div class="bpm-num" id="bpmNum">120</div>
+      <button class="btn-adj" id="btnUp">+</button>
+    </div>
+    <input class="bpm-input" id="bpmInput" type="number" min="20" max="300" value="120" placeholder="BPM">
+  </div>
+
+  <!-- 拍子選択欄 -->
+  <div class="ts-section">
+    <span class="ts-label">拍子</span>
+    <select class="ts-select" id="tsNum">
+      <option>2</option><option>3</option><option selected>4</option>
+      <option>5</option><option>6</option><option>7</option>
+      <option>8</option><option>9</option><option>10</option>
+      <option>11</option><option>12</option>
+    </select>
+    <span style="font-size:24px;color:#55556a">/</span>
+    <select class="ts-select" id="tsDenom">
+      <option>2</option><option selected>4</option><option>8</option><option>16</option>
+    </select>
+  </div>
+
+  <!-- スタート/ストップ・ミュートボタン -->
+  <div class="transport">
+    <button class="btn-mute" id="btnMute">🔊</button>
+    <button class="btn-start" id="btnStart">START</button>
+    <div style="width:48px"></div>
+  </div>
+
+  <!-- 20個のプリセット欄 -->
+  <div class="presets-section">
+    <div class="presets-title">Presets</div>
+    <div class="presets-grid" id="presetsGrid"></div>
+  </div>
+
+  <script>
+    // プリセット欄の骨組みを生成
+    const grid = document.getElementById('presetsGrid');
+    for (let i = 1; i <= 20; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'preset-cell';
+      cell.textContent = String(i).padStart(2, '0');
+      grid.appendChild(cell);
+    }
+  </script>
+</body>
+</html>
