@@ -110,6 +110,41 @@
       cell.textContent = String(i).padStart(2, '0');
       grid.appendChild(cell);
     }
+
+    // ── BPM ──
+    let bpm = 120;
+    let playing = false;
+
+    const bpmNum   = document.getElementById('bpmNum');
+    const bpmInput = document.getElementById('bpmInput');
+    const btnDown  = document.getElementById('btnDown');
+    const btnUp    = document.getElementById('btnUp');
+    const btnStart = document.getElementById('btnStart');
+
+    function setBPM(val) {
+      bpm = Math.max(20, Math.min(300, Math.round(val)));
+      bpmNum.textContent = bpm;
+      bpmInput.value = bpm;
+    }
+
+    btnDown.addEventListener('click', () => setBPM(bpm - 1));
+    btnUp.addEventListener('click',   () => setBPM(bpm + 1));
+
+    bpmInput.addEventListener('change', () => setBPM(Number(bpmInput.value)));
+    bpmInput.addEventListener('input',  () => {
+      const v = Number(bpmInput.value);
+      if (v >= 20 && v <= 300) bpmNum.textContent = Math.round(v);
+    });
+
+    // ── Start / Stop 表示切り替え ──
+    btnStart.addEventListener('click', () => {
+      playing = !playing;
+      btnStart.textContent = playing ? 'STOP' : 'START';
+      btnStart.style.background = playing ? '#ef4444' : '#22c55e';
+    });
+
+    // 初期値を確実に表示
+    setBPM(bpm);
   </script>
 </body>
 </html>
