@@ -32,6 +32,25 @@
       background: #10101e;
       border: 2px solid #28283f;
       margin-bottom: 24px;
+      transition: background 0.06s ease-out, box-shadow 0.08s ease-out, border-color 0.06s ease-out;
+    }
+
+    /* 1拍目：アンバー（強調） */
+    .led.on-accent {
+      background: radial-gradient(circle at 38% 32%, #ffe0a0, #ff8c00 50%, #ff6600);
+      border-color: #ff8c00;
+      box-shadow: 0 0 24px 8px rgba(255,140,0,0.85),
+                  0 0 70px 24px rgba(255,140,0,0.45),
+                  0 0 140px 56px rgba(255,120,0,0.18);
+    }
+
+    /* 2拍目以降：シアン */
+    .led.on-beat {
+      background: radial-gradient(circle at 38% 32%, #c0f4ff, #00b4d8 50%, #0099bb);
+      border-color: #00b4d8;
+      box-shadow: 0 0 24px 8px rgba(0,180,216,0.85),
+                  0 0 70px 24px rgba(0,180,216,0.45),
+                  0 0 140px 56px rgba(0,180,216,0.18);
     }
 
     .bpm-section { text-align: center; margin-bottom: 20px; }
@@ -136,12 +155,58 @@
       if (v >= 20 && v <= 300) bpmNum.textContent = Math.round(v);
     });
 
+    // ── 点滅ロジック ──
+    const led      = document.getElementById('led');
+    const tsNumEl  = document.getElementById('tsNum');
+
+    let beatIndex   = 0;
+    let intervalId  = null;
+    let flashTimer  = null;
+
+    function flash(isAccent) {
+      clearTimeout(flashTimer);
+      led.classList.remove('on-accent', 'on-beat');
+      // reflow で同じ拍でも再アニメーション
+      void led.offsetWidth;
+      led.classList.add(isAccent ? 'on-accent' : 'on-beat');
+      flashTimer = setTimeout(() => led.classList.remove('on-accent', 'on-beat'), 110);
+    }
+
+    function startMetronome() {
+      beatIndex = 0;
+      // 1拍目を即座に点滅
+      flash(true);
+      beatIndex = 1;
+      intervalId = setInterval(() => {
+        const beats = parseInt(tsNumEl.value, 10);
+        const isAccent = beatIndex === 0;
+        flash(isAccent);
+        beatIndex = (beatIndex + 1) % beats;
+      }, 60000 / bpm);
+    }
+
+    function stopMetronome() {
+      clearInterval(intervalId);
+      clearTimeout(flashTimer);
+      intervalId = null;
+      led.classList.remove('on-accent', 'on-beat');
+    }
+
     // ── Start / Stop 表示切り替え ──
     btnStart.addEventListener('click', () => {
       playing = !playing;
       btnStart.textContent = playing ? 'STOP' : 'START';
       btnStart.style.background = playing ? '#ef4444' : '#22c55e';
+      playing ? startMetronome() : stopMetronome();
     });
+
+    // BPM変更時に再生中なら再起動してテンポを即反映
+    function onBPMChange() {
+      if (playing) { stopMetronome(); startMetronome(); }
+    }
+    btnDown.addEventListener('click', onBPMChange);
+    btnUp.addEventListener('click',   onBPMChange);
+    bpmInput.addEventListener('change', onBPMChange);
 
     // 初期値を確実に表示
     setBPM(bpm);
