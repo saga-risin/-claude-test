@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Metronome Pro</title>
+  <style>
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      background: #08080f;
+      color: #dde2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 12px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #55556a;
+      margin-bottom: 28px;
+    }
+
+    .led {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: #10101e;
+      border: 2px solid #28283f;
+      margin-bottom: 24px;
+      transition: background 0.06s ease-out, box-shadow 0.08s ease-out, border-color 0.06s ease-out;
+    }
+
+    /* 1拍目：アンバー（強調） */
+    .led.on-accent {
+      background: radial-gradient(circle at 38% 32%, #ffe0a0, #ff8c00 50%, #ff6600);
+      border-color: #ff8c00;
+      box-shadow: 0 0 24px 8px rgba(255,140,0,0.85),
+                  0 0 70px 24px rgba(255,140,0,0.45),
+                  0 0 140px 56px rgba(255,120,0,0.18);
+    }
+
+    /* 2拍目以降：シアン */
+    .led.on-beat {
+      background: radial-gradient(circle at 38% 32%, #c0f4ff, #00b4d8 50%, #0099bb);
+      border-color: #00b4d8;
+      box-shadow: 0 0 24px 8px rgba(0,180,216,0.85),
+                  0 0 70px 24px rgba(0,180,216,0.45),
+                  0 0 140px 56px rgba(0,180,216,0.18);
+    }
+
+    .bpm-section { text-align: center; margin-bottom: 20px; }
+    .bpm-label { font-size: 10px; letter-spacing: 5px; color: #55556a; margin-bottom: 8px; }
+    .bpm-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
+    .bpm-num { font-size: 72px; font-weight: 200; min-width: 160px; text-align: center; }
+    .btn-adj { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #28283f; background: #10101e; color: #dde2f5; font-size: 24px; cursor: pointer; }
+    .bpm-input { width: 90px; padding: 6px 10px; background: #10101e; border: 1px solid #28283f; border-radius: 6px; color: #dde2f5; font-size: 16px; text-align: center; margin-top: 8px; }
+
+    .ts-section { text-align: center; margin-bottom: 24px; }
+    .ts-label { font-size: 10px; letter-spacing: 5px; color: #55556a; margin-bottom: 10px; }
+    .ts-display { display: flex; align-items: center; justify-content: center; gap: 0; font-size: 56px; font-weight: 200; line-height: 1; margin-bottom: 14px; }
+    .ts-display .ts-slash { font-size: 48px; font-weight: 100; color: #55556a; margin: 0 8px; }
+    .ts-controls { display: flex; gap: 24px; justify-content: center; align-items: flex-end; }
+    .ts-control { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .ts-control-label { font-size: 9px; letter-spacing: 3px; color: #55556a; }
+    .ts-select { background: #10101e; border: 1px solid #28283f; border-radius: 6px; color: #dde2f5; font-size: 16px; padding: 5px 10px; cursor: pointer; }
+
+    .transport { display: flex; gap: 12px; align-items: center; margin-bottom: 28px; }
+    .btn-start { padding: 14px 48px; border-radius: 40px; border: none; background: #22c55e; color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 4px; cursor: pointer; }
+    .btn-mute { width: 48px; height: 48px; border-radius: 50%; border: 1px solid #28283f; background: #10101e; color: #8888aa; font-size: 20px; cursor: pointer; }
+    .btn-mute.muted { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); }
+
+    .presets-section { width: 100%; max-width: 480px; }
+    .presets-title { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: #55556a; text-align: center; margin-bottom: 12px; }
+    .presets-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 380px; overflow-y: auto; padding-right: 2px; }
+    .preset-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid #28283f; border-radius: 6px; background: #0f0f1c; }
+    .preset-row-top { display: flex; align-items: center; gap: 6px; }
+    .preset-num  { font-size: 9px; color: #55556a; min-width: 18px; letter-spacing: 1px; }
+    .preset-name { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preset-info { font-size: 9px; color: #55556a; }
+    .preset-btns { display: flex; gap: 4px; }
+    .btn-preset  { padding: 3px 7px; border-radius: 4px; font-size: 9px; letter-spacing: 0.5px; cursor: pointer; border: 1px solid; background: transparent; flex: 1; }
+    .btn-preset:hover   { opacity: 0.75; }
+    .btn-preset:disabled { opacity: 0.2; cursor: default; }
+    .btn-preset-save { border-color: #22c55e; color: #22c55e; }
+    .btn-preset-load { border-color: #3a3a5c; color: #8888aa; }
+    .btn-preset-del  { border-color: #ef4444; color: #ef4444; }
+  </style>
+</head>
+<body>
+
+  <h1>Metronome Pro</h1>
+
+  <!-- 光の点滅表示エリア -->
+  <div class="led" id="led"></div>
+
+  <!-- BPM表示・増減ボタン・数値入力 -->
+  <div class="bpm-section">
+    <div class="bpm-label">BPM</div>
+    <div class="bpm-row">
+      <button class="btn-adj" id="btnDown">−</button>
+      <div class="bpm-num" id="bpmNum">120</div>
+      <button class="btn-adj" id="btnUp">+</button>
+    </div>
+    <input class="bpm-input" id="bpmInput" type="number" min="20" max="300" value="120" placeholder="BPM">
+  </div>
+
+  <!-- 拍子設定 -->
+  <div class="ts-section">
+    <div class="ts-label">拍子</div>
+    <div class="ts-display">
+      <span id="tsNumDisplay">4</span>
+      <span class="ts-slash">/</span>
+      <span id="tsDenomDisplay">4</span>
+    </div>
+    <div class="ts-controls">
+      <div class="ts-control">
+        <span class="ts-control-label">分子</span>
+        <select class="ts-select" id="tsNum">
+          <option>2</option><option>3</option><option selected>4</option>
+          <option>5</option><option>6</option><option>7</option>
+          <option>8</option><option>9</option><option>10</option>
+          <option>11</option><option>12</option>
+        </select>
+      </div>
+      <div class="ts-control">
+        <span class="ts-control-label">分母</span>
+        <select class="ts-select" id="tsDenom">
+          <option>2</option><option selected>4</option><option>8</option><option>16</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- スタート/ストップ・ミュートボタン -->
+  <div class="transport">
+    <button class="btn-mute" id="btnMute">🔊</button>
+    <button class="btn-start" id="btnStart">START</button>
+    <div style="width:48px"></div>
+  </div>
+
+  <!-- 20個のプリセット欄 -->
+  <div class="presets-section">
+    <div class="presets-title">Presets</div>
+    <div class="presets-grid" id="presetsGrid"></div>
+  </div>
+
+  <script>
+    // ── プリセットデータ ──
+    const STORAGE_KEY  = 'metroPro_v2';
+    const PRESET_COUNT = 20;
+    let presets = (() => {
+      try {
+        const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (Array.isArray(d) && d.length === PRESET_COUNT) return d;
+      } catch (_) {}
+      return Array(PRESET_COUNT).fill(null);
+    })();
+
+    // ── Web Audio ──
+    let audioCtx = null;
+    let muted = false;
+    const btnMute = document.getElementById('btnMute');
+
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playClick(isAccent) {
+      if (muted) return;
+      const ctx = audioCtx;
+      const t = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.value = isAccent ? 1500 : 900;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(isAccent ? 0.9 : 0.6, t + 0.001);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      osc.start(t); osc.stop(t + 0.07);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.type = 'sine';
+      osc2.frequency.value = isAccent ? 200 : 130;
+      gain2.gain.setValueAtTime(isAccent ? 0.4 : 0.25, t);
+      gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      osc2.start(t); osc2.stop(t + 0.05);
+
+      const len = Math.ceil(ctx.sampleRate * 0.007);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let j = 0; j < len; j++) ch[j] = (Math.random() * 2 - 1) * (1 - j / len);
+      const noise = ctx.createBufferSource();
+      noise.buffer = buf;
+      const ng = ctx.createGain();
+      noise.connect(ng); ng.connect(ctx.destination);
+      ng.gain.setValueAtTime(isAccent ? 0.55 : 0.3, t);
+      noise.start(t); noise.stop(t + 0.007);
+    }
+
+    btnMute.addEventListener('click', () => {
+      muted = !muted;
+      btnMute.textContent = muted ? '🔇' : '🔊';
+      btnMute.classList.toggle('muted', muted);
+    });
+
+    // ── BPM ──
+    let bpm = 120;
+    let playing = false;
+
+    const bpmNum   = document.getElementById('bpmNum');
+    const bpmInput = document.getElementById('bpmInput');
+    const btnDown  = document.getElementById('btnDown');
+    const btnUp    = document.getElementById('btnUp');
+    const btnStart = document.getElementById('btnStart');
+
+    function setBPM(val) {
+      bpm = Math.max(20, Math.min(300, Math.round(val)));
+      bpmNum.textContent = bpm;
+      bpmInput.value = bpm;
+    }
+
+    btnDown.addEventListener('click', () => setBPM(bpm - 1));
+    btnUp.addEventListener('click',   () => setBPM(bpm + 1));
+
+    bpmInput.addEventListener('change', () => setBPM(Number(bpmInput.value)));
+    bpmInput.addEventListener('input',  () => {
+      const v = Number(bpmInput.value);
+      if (v >= 20 && v <= 300) bpmNum.textContent = Math.round(v);
+    });
+
+    // ── 拍子表示 ──
+    const tsNumEl        = document.getElementById('tsNum');
+    const tsDenomEl      = document.getElementById('tsDenom');
+    const tsNumDisplay   = document.getElementById('tsNumDisplay');
+    const tsDenomDisplay = document.getElementById('tsDenomDisplay');
+
+    function updateTsDisplay() {
+      tsNumDisplay.textContent   = tsNumEl.value;
+      tsDenomDisplay.textContent = tsDenomEl.value;
+    }
+    tsNumEl.addEventListener('change',   updateTsDisplay);
+    tsDenomEl.addEventListener('change', updateTsDisplay);
+
+    // ── 点滅ロジック ──
+    const led = document.getElementById('led');
+
+    let beatIndex        = 0;
+    let beatsPerMeasure  = 4;
+    let intervalId       = null;
+    let flashTimer       = null;
+
+    function flash(isAccent) {
+      clearTimeout(flashTimer);
+      led.classList.remove('on-accent', 'on-beat');
+      void led.offsetWidth;
+      led.classList.add(isAccent ? 'on-accent' : 'on-beat');
+      flashTimer = setTimeout(() => led.classList.remove('on-accent', 'on-beat'), 110);
+      playClick(isAccent);
+    }
+
+    function startMetronome() {
+      beatsPerMeasure = parseInt(tsNumEl.value, 10);
+      beatIndex = 0;
+      flash(true);
+      beatIndex = 1;
+      intervalId = setInterval(() => {
+        const isAccent = beatIndex === 0;
+        flash(isAccent);
+        beatIndex = (beatIndex + 1) % beatsPerMeasure;
+      }, 60000 / bpm);
+    }
+
+    function stopMetronome() {
+      clearInterval(intervalId);
+      clearTimeout(flashTimer);
+      intervalId = null;
+      led.classList.remove('on-accent', 'on-beat');
+    }
+
+    // ── Start / Stop ──
+    btnStart.addEventListener('click', () => {
+      playing = !playing;
+      btnStart.textContent = playing ? 'STOP' : 'START';
+      btnStart.style.background = playing ? '#ef4444' : '#22c55e';
+      if (playing) { ensureAudio(); startMetronome(); } else { stopMetronome(); }
+    });
+
+    function onBPMChange() {
+      if (playing) { stopMetronome(); startMetronome(); }
+    }
+    btnDown.addEventListener('click', onBPMChange);
+    btnUp.addEventListener('click',   onBPMChange);
+    bpmInput.addEventListener('change', onBPMChange);
+
+    // 初期値を確実に表示
+    setBPM(bpm);
+
+    // ── プリセット 描画・操作 ──
+    const presetsGrid = document.getElementById('presetsGrid');
+
+    function renderPresets() {
+      presetsGrid.className = 'presets-list';
+      presetsGrid.innerHTML = '';
+      presets.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'preset-row';
+
+        const top = document.createElement('div');
+        top.className = 'preset-row-top';
+
+        const numEl = document.createElement('span');
+        numEl.className = 'preset-num';
+        numEl.textContent = String(i + 1).padStart(2, '0');
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'preset-name';
+        nameEl.textContent = p ? p.name : '────';
+        nameEl.style.color = p ? '#dde2f5' : '#55556a';
+
+        top.append(numEl, nameEl);
+
+        const infoEl = document.createElement('div');
+        infoEl.className = 'preset-info';
+        infoEl.textContent = p ? `${p.bpm} BPM  ${p.tsNum}/${p.tsDenom}` : '';
+
+        const btns = document.createElement('div');
+        btns.className = 'preset-btns';
+
+        const btnSave = document.createElement('button');
+        btnSave.className = 'btn-preset btn-preset-save';
+        btnSave.textContent = '保存';
+        btnSave.addEventListener('click', () => {
+          const inputName = prompt('曲名を入力してください', p ? p.name : '');
+          if (inputName === null) return;
+          presets[i] = {
+            name:    inputName.trim() || `Preset ${i + 1}`,
+            bpm,
+            tsNum:   parseInt(tsNumEl.value,   10),
+            tsDenom: parseInt(tsDenomEl.value, 10),
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+          renderPresets();
+        });
+
+        const btnLoad = document.createElement('button');
+        btnLoad.className = 'btn-preset btn-preset-load';
+        btnLoad.textContent = '読込';
+        btnLoad.disabled = !p;
+        btnLoad.addEventListener('click', () => {
+          if (!p) return;
+          setBPM(p.bpm);
+          tsNumEl.value   = p.tsNum;
+          tsDenomEl.value = p.tsDenom;
+          updateTsDisplay();
+        });
+
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn-preset btn-preset-del';
+        btnDel.textContent = '削除';
+        btnDel.disabled = !p;
+        btnDel.addEventListener('click', () => {
+          if (!p) return;
+          presets[i] = null;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+          renderPresets();
+        });
+
+        btns.append(btnSave, btnLoad, btnDel);
+        row.append(top, infoEl, btns);
+        presetsGrid.appendChild(row);
+      });
+    }
+
+    renderPresets();
+  </script>
+</body>
+</html>
