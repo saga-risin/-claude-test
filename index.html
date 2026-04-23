@@ -403,6 +403,7 @@
           tsNumEl.value   = p.tsNum;
           tsDenomEl.value = p.tsDenom;
           updateTsDisplay();
+          if (playing) { stopMetronome(); startMetronome(); }
         });
 
         const btnDel = document.createElement('button');
