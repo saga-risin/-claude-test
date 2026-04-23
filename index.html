@@ -81,6 +81,8 @@
     .presets-title { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: #55556a; text-align: center; margin-bottom: 12px; }
     .presets-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 380px; overflow-y: auto; padding-right: 2px; }
     .preset-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid #28283f; border-radius: 6px; background: #0f0f1c; }
+    .preset-row.active { border-color: #00b4d8; background: #0d1e26; box-shadow: 0 0 8px rgba(0,180,216,0.3); }
+    .preset-row.active .preset-num { color: #00b4d8; }
     .preset-row-top { display: flex; align-items: center; gap: 6px; }
     .preset-num  { font-size: 9px; color: #55556a; min-width: 18px; letter-spacing: 1px; }
     .preset-name { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -345,13 +347,14 @@
 
     // ── プリセット 描画・操作 ──
     const presetsGrid = document.getElementById('presetsGrid');
+    let activePresetIdx = -1;
 
     function renderPresets() {
       presetsGrid.className = 'presets-list';
       presetsGrid.innerHTML = '';
       presets.forEach((p, i) => {
         const row = document.createElement('div');
-        row.className = 'preset-row';
+        row.className = 'preset-row' + (i === activePresetIdx ? ' active' : '');
 
         // 上段：番号 + 曲名
         const top = document.createElement('div');
@@ -404,6 +407,8 @@
           tsDenomEl.value = p.tsDenom;
           updateTsDisplay();
           if (playing) { stopMetronome(); startMetronome(); }
+          activePresetIdx = i;
+          renderPresets();
         });
 
         const btnDel = document.createElement('button');
