@@ -93,7 +93,9 @@
     .btn-preset:disabled { opacity: 0.2; cursor: default; }
     .btn-preset-save { border-color: #22c55e; color: #22c55e; }
     .btn-preset-load { border-color: #3a3a5c; color: #8888aa; }
-    .btn-preset-del  { border-color: #ef4444; color: #ef4444; }
+    .btn-preset-del-single { display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 6px; border: 1px solid #3a2020; background: transparent; color: #55556a; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+    .btn-preset-del-single:not(:disabled):hover { border-color: #ef4444; color: #ef4444; }
+    .btn-preset-del-single:disabled { opacity: 0.25; cursor: default; }
   </style>
 </head>
 <body>
@@ -155,6 +157,7 @@
   <div class="presets-section">
     <div class="presets-title">Presets</div>
     <div class="presets-grid" id="presetsGrid"></div>
+    <button class="btn-preset-del-single" id="btnDelPreset" disabled>選択中のプリセットを削除</button>
   </div>
 
   <script>
@@ -346,8 +349,22 @@
     setBPM(bpm);
 
     // ── プリセット 描画・操作 ──
-    const presetsGrid = document.getElementById('presetsGrid');
+    const presetsGrid  = document.getElementById('presetsGrid');
+    const btnDelPreset = document.getElementById('btnDelPreset');
     let activePresetIdx = -1;
+
+    function updateDelBtn() {
+      btnDelPreset.disabled = activePresetIdx < 0 || !presets[activePresetIdx];
+    }
+
+    btnDelPreset.addEventListener('click', () => {
+      if (activePresetIdx < 0 || !presets[activePresetIdx]) return;
+      presets[activePresetIdx] = null;
+      activePresetIdx = -1;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+      updateDelBtn();
+      renderPresets();
+    });
 
     function renderPresets() {
       presetsGrid.className = 'presets-list';
@@ -408,21 +425,11 @@
           updateTsDisplay();
           if (playing) { stopMetronome(); startMetronome(); }
           activePresetIdx = i;
+          updateDelBtn();
           renderPresets();
         });
 
-        const btnDel = document.createElement('button');
-        btnDel.className = 'btn-preset btn-preset-del';
-        btnDel.textContent = '削除';
-        btnDel.disabled = !p;
-        btnDel.addEventListener('click', () => {
-          if (!p) return;
-          presets[i] = null;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-          renderPresets();
-        });
-
-        btns.append(btnSave, btnLoad, btnDel);
+        btns.append(btnSave, btnLoad);
         row.append(top, infoEl, btns);
         presetsGrid.appendChild(row);
       });
