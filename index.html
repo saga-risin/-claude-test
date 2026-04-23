@@ -35,6 +35,7 @@
       transition: background 0.06s ease-out, box-shadow 0.08s ease-out, border-color 0.06s ease-out;
     }
 
+    /* 1拍目：アンバー（強調） */
     .led.on-accent {
       background: radial-gradient(circle at 38% 32%, #ffe0a0, #ff8c00 50%, #ff6600);
       border-color: #ff8c00;
@@ -43,6 +44,7 @@
                   0 0 140px 56px rgba(255,120,0,0.18);
     }
 
+    /* 2拍目以降：シアン */
     .led.on-beat {
       background: radial-gradient(circle at 38% 32%, #c0f4ff, #00b4d8 50%, #0099bb);
       border-color: #00b4d8;
@@ -91,15 +93,19 @@
     .btn-preset:disabled { opacity: 0.2; cursor: default; }
     .btn-preset-save { border-color: #22c55e; color: #22c55e; }
     .btn-preset-load { border-color: #3a3a5c; color: #8888aa; }
-    .btn-preset-del  { border-color: #ef4444; color: #ef4444; }
+    .btn-preset-del-single { display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 6px; border: 1px solid #3a2020; background: transparent; color: #55556a; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+    .btn-preset-del-single:not(:disabled):hover { border-color: #ef4444; color: #ef4444; }
+    .btn-preset-del-single:disabled { opacity: 0.25; cursor: default; }
   </style>
 </head>
 <body>
 
   <h1>Metronome Pro</h1>
 
+  <!-- 光の点滅表示エリア -->
   <div class="led" id="led"></div>
 
+  <!-- BPM表示・増減ボタン・数値入力 -->
   <div class="bpm-section">
     <div class="bpm-label">BPM</div>
     <div class="bpm-row">
@@ -110,6 +116,7 @@
     <input class="bpm-input" id="bpmInput" type="number" min="20" max="300" value="120" placeholder="BPM">
   </div>
 
+  <!-- 拍子設定 -->
   <div class="ts-section">
     <div class="ts-label">拍子</div>
     <div class="ts-display">
@@ -136,20 +143,25 @@
     </div>
   </div>
 
+  <!-- スタート/ストップ・ミュートボタン -->
   <div class="transport">
     <button class="btn-mute" id="btnMute">🔊</button>
     <button class="btn-start" id="btnStart">START</button>
     <div style="width:48px"></div>
   </div>
 
+  <!-- タップテンポ -->
   <button class="btn-tap" id="btnTap">TAP TEMPO</button>
 
+  <!-- 20個のプリセット欄 -->
   <div class="presets-section">
     <div class="presets-title">Presets</div>
     <div class="presets-grid" id="presetsGrid"></div>
+    <button class="btn-preset-del-single" id="btnDelPreset" disabled>選択中のプリセットを削除</button>
   </div>
 
   <script>
+    // ── プリセットデータ ──
     const STORAGE_KEY  = 'metroPro_v2';
     const PRESET_COUNT = 20;
     let presets = (() => {
@@ -160,6 +172,7 @@
       return Array(PRESET_COUNT).fill(null);
     })();
 
+    // ── Web Audio ──
     let audioCtx = null;
     let muted = false;
     const btnMute = document.getElementById('btnMute');
@@ -173,6 +186,8 @@
       if (muted) return;
       const ctx = audioCtx;
       const t = ctx.currentTime;
+
+      // トーン本体
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
@@ -182,6 +197,8 @@
       gain.gain.linearRampToValueAtTime(isAccent ? 0.9 : 0.6, t + 0.001);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
       osc.start(t); osc.stop(t + 0.07);
+
+      // サブ低音クリック
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.connect(gain2); gain2.connect(ctx.destination);
@@ -190,6 +207,8 @@
       gain2.gain.setValueAtTime(isAccent ? 0.4 : 0.25, t);
       gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
       osc2.start(t); osc2.stop(t + 0.05);
+
+      // アタック用ノイズ
       const len = Math.ceil(ctx.sampleRate * 0.007);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const ch = buf.getChannelData(0);
@@ -208,8 +227,10 @@
       btnMute.classList.toggle('muted', muted);
     });
 
+    // ── BPM ──
     let bpm = 120;
     let playing = false;
+
     const bpmNum   = document.getElementById('bpmNum');
     const bpmInput = document.getElementById('bpmInput');
     const btnDown  = document.getElementById('btnDown');
@@ -224,12 +245,14 @@
 
     btnDown.addEventListener('click', () => setBPM(bpm - 1));
     btnUp.addEventListener('click',   () => setBPM(bpm + 1));
+
     bpmInput.addEventListener('change', () => setBPM(Number(bpmInput.value)));
     bpmInput.addEventListener('input',  () => {
       const v = Number(bpmInput.value);
       if (v >= 20 && v <= 300) bpmNum.textContent = Math.round(v);
     });
 
+    // ── 拍子表示 ──
     const tsNumEl        = document.getElementById('tsNum');
     const tsDenomEl      = document.getElementById('tsDenom');
     const tsNumDisplay   = document.getElementById('tsNumDisplay');
@@ -242,9 +265,11 @@
     tsNumEl.addEventListener('change',   updateTsDisplay);
     tsDenomEl.addEventListener('change', updateTsDisplay);
 
+    // ── 点滅ロジック ──
     const led = document.getElementById('led');
+
     let beatIndex        = 0;
-    let beatsPerMeasure  = 4;
+    let beatsPerMeasure  = 4;   // Start時に確定
     let intervalId       = null;
     let flashTimer       = null;
 
@@ -258,6 +283,7 @@
     }
 
     function startMetronome() {
+      // 拍子は Start 時点で確定し、途中変更は次の Start から反映
       beatsPerMeasure = parseInt(tsNumEl.value, 10);
       beatIndex = 0;
       flash(true);
@@ -276,6 +302,7 @@
       led.classList.remove('on-accent', 'on-beat');
     }
 
+    // ── Start / Stop ──
     btnStart.addEventListener('click', () => {
       playing = !playing;
       btnStart.textContent = playing ? 'STOP' : 'START';
@@ -283,6 +310,7 @@
       if (playing) { ensureAudio(); startMetronome(); } else { stopMetronome(); }
     });
 
+    // BPM変更時に再生中なら再起動してテンポを即反映
     function onBPMChange() {
       if (playing) { stopMetronome(); startMetronome(); }
     }
@@ -290,6 +318,7 @@
     btnUp.addEventListener('click',   onBPMChange);
     bpmInput.addEventListener('change', onBPMChange);
 
+    // ── タップテンポ ──
     const btnTap = document.getElementById('btnTap');
     let tapTimes = [];
     let tapResetTimer = null;
@@ -297,23 +326,45 @@
     btnTap.addEventListener('click', () => {
       const now = performance.now();
       clearTimeout(tapResetTimer);
+
       tapTimes.push(now);
       if (tapTimes.length > 8) tapTimes.shift();
+
       if (tapTimes.length >= 2) {
         let sum = 0;
         for (let i = 1; i < tapTimes.length; i++) sum += tapTimes[i] - tapTimes[i - 1];
         setBPM(60000 / (sum / (tapTimes.length - 1)));
         if (playing) { stopMetronome(); startMetronome(); }
       }
+
+      // 視覚フィードバック
       btnTap.classList.add('tapped');
       setTimeout(() => btnTap.classList.remove('tapped'), 100);
+
+      // 2.5秒操作がなければリセット
       tapResetTimer = setTimeout(() => { tapTimes = []; }, 2500);
     });
 
+    // 初期値を確実に表示
     setBPM(bpm);
 
-    const presetsGrid = document.getElementById('presetsGrid');
+    // ── プリセット 描画・操作 ──
+    const presetsGrid  = document.getElementById('presetsGrid');
+    const btnDelPreset = document.getElementById('btnDelPreset');
     let activePresetIdx = -1;
+
+    function updateDelBtn() {
+      btnDelPreset.disabled = activePresetIdx < 0 || !presets[activePresetIdx];
+    }
+
+    btnDelPreset.addEventListener('click', () => {
+      if (activePresetIdx < 0 || !presets[activePresetIdx]) return;
+      presets[activePresetIdx] = null;
+      activePresetIdx = -1;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+      updateDelBtn();
+      renderPresets();
+    });
 
     function renderPresets() {
       presetsGrid.className = 'presets-list';
@@ -321,31 +372,47 @@
       presets.forEach((p, i) => {
         const row = document.createElement('div');
         row.className = 'preset-row' + (i === activePresetIdx ? ' active' : '');
+
+        // 上段：番号 + 曲名
         const top = document.createElement('div');
         top.className = 'preset-row-top';
+
         const numEl = document.createElement('span');
         numEl.className = 'preset-num';
         numEl.textContent = String(i + 1).padStart(2, '0');
+
         const nameEl = document.createElement('span');
         nameEl.className = 'preset-name';
         nameEl.textContent = p ? p.name : '────';
         nameEl.style.color = p ? '#dde2f5' : '#55556a';
+
         top.append(numEl, nameEl);
+
+        // 中段：BPM・拍子情報
         const infoEl = document.createElement('div');
         infoEl.className = 'preset-info';
         infoEl.textContent = p ? `${p.bpm} BPM  ${p.tsNum}/${p.tsDenom}` : '';
+
+        // 下段：操作ボタン
         const btns = document.createElement('div');
         btns.className = 'preset-btns';
+
         const btnSave = document.createElement('button');
         btnSave.className = 'btn-preset btn-preset-save';
         btnSave.textContent = '保存';
         btnSave.addEventListener('click', () => {
           const inputName = prompt('曲名を入力してください', p ? p.name : '');
           if (inputName === null) return;
-          presets[i] = { name: inputName.trim() || `Preset ${i + 1}`, bpm, tsNum: parseInt(tsNumEl.value, 10), tsDenom: parseInt(tsDenomEl.value, 10) };
+          presets[i] = {
+            name:    inputName.trim() || `Preset ${i + 1}`,
+            bpm,
+            tsNum:   parseInt(tsNumEl.value,   10),
+            tsDenom: parseInt(tsDenomEl.value, 10),
+          };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
           renderPresets();
         });
+
         const btnLoad = document.createElement('button');
         btnLoad.className = 'btn-preset btn-preset-load';
         btnLoad.textContent = '読込';
@@ -353,25 +420,16 @@
         btnLoad.addEventListener('click', () => {
           if (!p) return;
           setBPM(p.bpm);
-          tsNumEl.value = p.tsNum;
+          tsNumEl.value   = p.tsNum;
           tsDenomEl.value = p.tsDenom;
           updateTsDisplay();
           if (playing) { stopMetronome(); startMetronome(); }
           activePresetIdx = i;
+          updateDelBtn();
           renderPresets();
         });
-        const btnDel = document.createElement('button');
-        btnDel.className = 'btn-preset btn-preset-del';
-        btnDel.textContent = '削除';
-        btnDel.disabled = !p;
-        btnDel.addEventListener('click', () => {
-          if (!p) return;
-          presets[i] = null;
-          if (activePresetIdx === i) activePresetIdx = -1;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-          renderPresets();
-        });
-        btns.append(btnSave, btnLoad, btnDel);
+
+        btns.append(btnSave, btnLoad);
         row.append(top, infoEl, btns);
         presetsGrid.appendChild(row);
       });
