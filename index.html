@@ -74,6 +74,9 @@
     .btn-mute { width: 48px; height: 48px; border-radius: 50%; border: 1px solid #28283f; background: #10101e; color: #8888aa; font-size: 20px; cursor: pointer; }
     .btn-mute.muted { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); }
 
+    .btn-tap { width: 100%; max-width: 480px; padding: 18px; border-radius: 12px; border: 1px solid #28283f; background: #10101e; color: #8888aa; font-size: 13px; font-weight: 600; letter-spacing: 5px; text-transform: uppercase; cursor: pointer; margin-bottom: 24px; transition: background 0.08s, border-color 0.08s, color 0.08s; -webkit-tap-highlight-color: transparent; }
+    .btn-tap:active, .btn-tap.tapped { background: #1a1a2e; border-color: #00b4d8; color: #00b4d8; }
+
     .presets-section { width: 100%; max-width: 480px; }
     .presets-title { font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: #55556a; text-align: center; margin-bottom: 12px; }
     .presets-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 380px; overflow-y: auto; padding-right: 2px; }
@@ -142,6 +145,9 @@
     <button class="btn-start" id="btnStart">START</button>
     <div style="width:48px"></div>
   </div>
+
+  <!-- タップテンポ -->
+  <button class="btn-tap" id="btnTap">TAP TEMPO</button>
 
   <!-- 20個のプリセット欄 -->
   <div class="presets-section">
@@ -306,6 +312,33 @@
     btnDown.addEventListener('click', onBPMChange);
     btnUp.addEventListener('click',   onBPMChange);
     bpmInput.addEventListener('change', onBPMChange);
+
+    // ── タップテンポ ──
+    const btnTap = document.getElementById('btnTap');
+    let tapTimes = [];
+    let tapResetTimer = null;
+
+    btnTap.addEventListener('click', () => {
+      const now = performance.now();
+      clearTimeout(tapResetTimer);
+
+      tapTimes.push(now);
+      if (tapTimes.length > 8) tapTimes.shift();
+
+      if (tapTimes.length >= 2) {
+        let sum = 0;
+        for (let i = 1; i < tapTimes.length; i++) sum += tapTimes[i] - tapTimes[i - 1];
+        setBPM(60000 / (sum / (tapTimes.length - 1)));
+        if (playing) { stopMetronome(); startMetronome(); }
+      }
+
+      // 視覚フィードバック
+      btnTap.classList.add('tapped');
+      setTimeout(() => btnTap.classList.remove('tapped'), 100);
+
+      // 2.5秒操作がなければリセット
+      tapResetTimer = setTimeout(() => { tapTimes = []; }, 2500);
+    });
 
     // 初期値を確実に表示
     setBPM(bpm);
