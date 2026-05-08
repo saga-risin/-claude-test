@@ -73,11 +73,6 @@ void FDNReverb::setDamping(float v) {
     dampCoeff_ = 1.0f - v * 0.85f;
 }
 
-void FDNReverb::setWet(float v) {
-    wet_ = std::clamp(v, 0.0f, 1.0f);
-    dry_ = 1.0f - wet_;
-}
-
 void FDNReverb::setPreDelayMs(float v) {
     updatePreDelay(std::clamp(v, 0.0f, static_cast<float>(MAX_PRE_DELAY_MS)));
 }
@@ -142,7 +137,7 @@ void FDNReverb::process(const float* inL, const float* inR,
         }
 
         const float norm = 1.0f / (NUM_LINES / 2);
-        outL[n] = dry_ * inL[n] + wet_ * wetL * norm;
-        outR[n] = dry_ * inR[n] + wet_ * wetR * norm;
+        outL[n] = wetL * norm;
+        outR[n] = wetR * norm;
     }
 }

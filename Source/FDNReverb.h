@@ -19,10 +19,9 @@ public:
 
     void setRoomSize(float v);   // 0.0 – 1.0  → RT60 ~0.5s – 8s
     void setDamping(float v);    // 0.0 – 1.0  → high-freq absorption
-    void setWet(float v);        // 0.0 – 1.0
     void setPreDelayMs(float v); // 0 – 100 ms
 
-    // Stereo in-place process.
+    // Outputs wet-only reverb signal. Dry/wet mix is handled by the caller.
     void process(const float* inL, const float* inR,
                  float* outL, float* outR, int numSamples);
 
@@ -54,8 +53,6 @@ private:
 
     float rt60_      = 2.0f;
     float dampCoeff_ = 0.5f;  // one-pole coefficient
-    float wet_       = 0.5f;
-    float dry_       = 0.5f;
 
     static constexpr int BASE_DELAYS_[NUM_LINES] = {
         1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617

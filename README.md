@@ -6,12 +6,34 @@ on macOS.
 
 ## Parameters
 
+### Reverb
+
 | Parameter    | Range       | Default | Description                              |
 |------------- |------------ |---------|------------------------------------------|
 | Room Size    | 0.0 – 1.0   | 0.5     | RT60 from ~0.3 s (small) to ~8 s (large)|
 | Damping      | 0.0 – 1.0   | 0.5     | High-frequency absorption                |
 | Wet/Dry Mix  | 0.0 – 1.0   | 0.5     | 0 = dry only, 1 = wet only               |
 | Pre-Delay    | 0 – 100 ms  | 20 ms   | Time before reverb tail begins           |
+
+### 4-Band EQ (applied to wet/reverb signal only)
+
+| Parameter      | Range            | Default  | Typical vocal use                        |
+|--------------- |----------------- |----------|------------------------------------------|
+| EQ1 Freq       | 20 – 1 000 Hz    | 300 Hz   | Low Shelf — cut low-end rumble           |
+| EQ1 Gain       | -18 – +18 dB     | 0 dB     |                                          |
+| EQ2 Freq       | 100 – 5 000 Hz   | 500 Hz   | Peak — reduce muddiness (~300–600 Hz)    |
+| EQ2 Gain       | -18 – +18 dB     | 0 dB     |                                          |
+| EQ2 Q          | 0.1 – 10         | 1.4      |                                          |
+| EQ3 Freq       | 500 – 16 000 Hz  | 3 000 Hz | Peak — add presence/intelligibility      |
+| EQ3 Gain       | -18 – +18 dB     | 0 dB     |                                          |
+| EQ3 Q          | 0.1 – 10         | 1.4      |                                          |
+| EQ4 Freq       | 2 000 – 20 000 Hz| 8 000 Hz | High Shelf — control air & brightness    |
+| EQ4 Gain       | -18 – +18 dB     | 0 dB     |                                          |
+
+**Starting point for vocals:** EQ1 low-shelf cut around 200–300 Hz (−4 to −6 dB)
+removes low-end boxiness; EQ3 presence peak around 2–4 kHz adds intelligibility
+without making the reverb harsh; EQ4 high-shelf rolloff above 10 kHz tames
+excessive brightness on bright/sibilant voices.
 
 ## Algorithm
 

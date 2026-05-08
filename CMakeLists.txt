@@ -22,6 +22,7 @@ endif()
 # ── Plugin bundle ─────────────────────────────────────────────────────────────
 add_library(ReverbAU MODULE
     Source/FDNReverb.cpp
+    Source/BiquadEQ.cpp
     Source/ReverbAU.cpp
 )
 
