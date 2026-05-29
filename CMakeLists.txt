@@ -25,7 +25,7 @@ juce_add_plugin(ResonanceDetector
     IS_MIDI_EFFECT            FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD   TRUE
-    FORMATS                   AU VST3
+    FORMATS                   VST3
     PRODUCT_NAME              "Resonance Detector"
     BUNDLE_ID                 "com.yourcompany.resonancedetector"
 )
