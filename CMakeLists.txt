@@ -14,6 +14,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
+if(APPLE)
+    set(PLUGIN_FORMATS AU VST3)
+else()
+    set(PLUGIN_FORMATS VST3)
+endif()
+
 juce_add_plugin(ResonanceDetector
     COMPANY_NAME              "YourCompany"
     COMPANY_WEBSITE           "https://example.com"
@@ -25,7 +31,7 @@ juce_add_plugin(ResonanceDetector
     IS_MIDI_EFFECT            FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD   TRUE
-    FORMATS                   $<IF:$<PLATFORM_ID:Darwin>,AU VST3,VST3>
+    FORMATS                   ${PLUGIN_FORMATS}
     PRODUCT_NAME              "Resonance Detector"
     BUNDLE_ID                 "com.yourcompany.resonancedetector"
 )
